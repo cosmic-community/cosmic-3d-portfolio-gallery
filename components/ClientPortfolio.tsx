@@ -7,7 +7,7 @@ import LoadingScene from '@/components/LoadingScene'
 import Navigation from '@/components/Navigation'
 import ProjectModal from '@/components/ProjectModal'
 
-// Dynamically import 3D components to prevent SSR issues
+// Dynamically import 3D components with proper error handling
 const Scene3D = dynamic(() => import('@/components/Scene3D'), {
   ssr: false,
   loading: () => <LoadingScene />
@@ -20,15 +20,63 @@ interface ClientPortfolioProps {
 export default function ClientPortfolio({ projects }: ClientPortfolioProps) {
   const [mounted, setMounted] = useState(false)
   const [hasWebGL, setHasWebGL] = useState(true)
+  const [initError, setInitError] = useState<string | null>(null)
 
   useEffect(() => {
-    setMounted(true)
+    let isMounted = true
     
-    // Check WebGL support
-    const canvas = document.createElement('canvas')
-    const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl')
-    setHasWebGL(!!gl)
+    const initializeApp = async () => {
+      try {
+        // Check WebGL support
+        const canvas = document.createElement('canvas')
+        const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl')
+        
+        if (!gl) {
+          setHasWebGL(false)
+          return
+        }
+
+        // Small delay to ensure React is fully initialized
+        await new Promise(resolve => setTimeout(resolve, 50))
+        
+        if (isMounted) {
+          setMounted(true)
+        }
+      } catch (error) {
+        console.error('Initialization error:', error)
+        if (isMounted) {
+          setInitError('Failed to initialize 3D environment')
+        }
+      }
+    }
+
+    initializeApp()
+    
+    return () => {
+      isMounted = false
+    }
   }, [])
+
+  if (initError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center space-y-6 p-8">
+          <h2 className="text-3xl font-bold text-foreground">
+            Initialization Error
+          </h2>
+          <p className="text-muted-foreground max-w-md">
+            {initError}. Please refresh the page to try again.
+          </p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+          >
+            Refresh Page
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   if (!mounted) {
     return <LoadingScene />

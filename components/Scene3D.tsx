@@ -16,7 +16,12 @@ export default function Scene3D({ projects }: Scene3DProps) {
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
-    setMounted(true)
+    // Ensure we're fully mounted before initializing 3D components
+    const timer = setTimeout(() => {
+      setMounted(true)
+    }, 100)
+    
+    return () => clearTimeout(timer)
   }, [])
 
   if (!mounted) {
@@ -50,13 +55,19 @@ export default function Scene3D({ projects }: Scene3DProps) {
         gl={{ 
           antialias: true,
           alpha: true,
-          powerPreference: "high-performance"
+          powerPreference: "high-performance",
+          preserveDrawingBuffer: false
         }}
-        dpr={[1, 2]}
+        dpr={typeof window !== 'undefined' ? [1, Math.min(window.devicePixelRatio, 2)] : [1, 2]}
         shadows
+        frameloop="always"
         onCreated={(state) => {
           // Ensure WebGL context is properly initialized
-          state.gl.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+          if (typeof window !== 'undefined') {
+            state.gl.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+          }
+          // Disable color management to prevent React fiber issues
+          state.gl.outputColorSpace = 'srgb'
         }}
       >
         <Suspense fallback={null}>
