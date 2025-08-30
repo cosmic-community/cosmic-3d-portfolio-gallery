@@ -6,7 +6,6 @@ import { Project } from '@/types'
 import SceneEnvironment from './SceneEnvironment'
 import ProjectsGrid from './ProjectsGrid'
 import CameraController from './CameraController'
-import LoadingScene from './LoadingScene'
 
 interface Scene3DProps {
   projects: Project[]
@@ -18,7 +17,9 @@ export default function Scene3D({ projects }: Scene3DProps) {
   const handleProjectClick = (project: Project) => {
     setSelectedProject(project)
     // Dispatch custom event for modal
-    window.dispatchEvent(new CustomEvent('projectSelected', { detail: project }))
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('projectSelected', { detail: project }))
+    }
   }
 
   return (
