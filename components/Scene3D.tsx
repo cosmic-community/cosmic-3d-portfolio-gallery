@@ -1,7 +1,7 @@
 'use client'
 
 import { Canvas } from '@react-three/fiber'
-import { Suspense, useState } from 'react'
+import { Suspense, useState, useMemo } from 'react'
 import { Project } from '@/types'
 import SceneEnvironment from './SceneEnvironment'
 import ProjectsGrid from './ProjectsGrid'
@@ -22,30 +22,40 @@ export default function Scene3D({ projects }: Scene3DProps) {
     }
   }
 
+  // Memoize camera settings to prevent unnecessary re-renders
+  const cameraSettings = useMemo(() => ({
+    position: [0, 5, 15] as [number, number, number],
+    fov: 60,
+    near: 0.1,
+    far: 1000
+  }), [])
+
+  // Memoize gl settings to prevent unnecessary re-renders
+  const glSettings = useMemo(() => ({
+    antialias: true,
+    alpha: true,
+    powerPreference: "high-performance" as const,
+    preserveDrawingBuffer: false,
+    failIfMajorPerformanceCaveat: false
+  }), [])
+
   return (
     <div className="w-full h-full">
       <Canvas
-        camera={{ 
-          position: [0, 5, 15], 
-          fov: 60,
-          near: 0.1,
-          far: 1000
-        }}
-        gl={{ 
-          antialias: true,
-          alpha: true,
-          powerPreference: "high-performance",
-          preserveDrawingBuffer: false,
-          failIfMajorPerformanceCaveat: false
-        }}
+        camera={cameraSettings}
+        gl={glSettings}
         dpr={[1, 2]}
         shadows={false}
         frameloop="demand"
         onCreated={(state) => {
-          // Safe WebGL setup
+          // Safe WebGL setup with error handling
           try {
-            state.gl.setPixelRatio(Math.min(window.devicePixelRatio, 2))
-            state.gl.outputColorSpace = 'srgb'
+            if (state.gl && state.gl.setPixelRatio) {
+              state.gl.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+            }
+            if (state.gl && 'outputColorSpace' in state.gl) {
+              state.gl.outputColorSpace = 'srgb'
+            }
           } catch (error) {
             console.warn('WebGL setup warning:', error)
           }

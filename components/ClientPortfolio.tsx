@@ -1,13 +1,13 @@
 'use client'
 
-import { Suspense, useState, useEffect } from 'react'
+import { Suspense, useState, useEffect, useCallback } from 'react'
 import { Project } from '@/types'
 import LoadingScene from '@/components/LoadingScene'
 import Navigation from '@/components/Navigation'
 import ProjectModal from '@/components/ProjectModal'
 import dynamic from 'next/dynamic'
 
-// Dynamically import Scene3D to avoid SSR issues
+// Dynamically import Scene3D to avoid SSR issues with better loading
 const Scene3D = dynamic(() => import('@/components/Scene3D'), { 
   ssr: false,
   loading: () => <LoadingScene />
@@ -22,6 +22,17 @@ export default function ClientPortfolio({ projects }: ClientPortfolioProps) {
   const [hasWebGL, setHasWebGL] = useState(true)
   const [initError, setInitError] = useState<string | null>(null)
 
+  const checkWebGL = useCallback(() => {
+    try {
+      const canvas = document.createElement('canvas')
+      const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl')
+      canvas.remove()
+      return !!gl
+    } catch {
+      return false
+    }
+  }, [])
+
   useEffect(() => {
     let isMounted = true
     
@@ -31,19 +42,15 @@ export default function ClientPortfolio({ projects }: ClientPortfolioProps) {
         if (typeof window === 'undefined') return
         
         // Check WebGL support
-        const canvas = document.createElement('canvas')
-        const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl')
+        const webglSupported = checkWebGL()
         
-        if (!gl) {
+        if (!webglSupported) {
           if (isMounted) {
             setHasWebGL(false)
             setMounted(true)
           }
           return
         }
-
-        // Clean up test canvas
-        canvas.remove()
         
         if (isMounted) {
           setMounted(true)
@@ -57,13 +64,17 @@ export default function ClientPortfolio({ projects }: ClientPortfolioProps) {
       }
     }
 
-    // Small delay to ensure DOM is ready
-    const timer = setTimeout(initializeApp, 100)
+    // Small delay to ensure DOM is ready and React has fully initialized
+    const timer = setTimeout(initializeApp, 150)
     
     return () => {
       isMounted = false
       clearTimeout(timer)
     }
+  }, [checkWebGL])
+
+  const handleRefresh = useCallback(() => {
+    window.location.reload()
   }, [])
 
   if (initError) {
@@ -77,7 +88,7 @@ export default function ClientPortfolio({ projects }: ClientPortfolioProps) {
             {initError}. Please refresh the page to try again.
           </p>
           <button 
-            onClick={() => window.location.reload()}
+            onClick={handleRefresh}
             className="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
           >
             Refresh Page
@@ -114,7 +125,9 @@ export default function ClientPortfolio({ projects }: ClientPortfolioProps) {
       
       {/* 3D Scene */}
       <div className="absolute inset-0 w-full h-full">
-        <Scene3D projects={projects} />
+        <Suspense fallback={<LoadingScene />}>
+          <Scene3D projects={projects} />
+        </Suspense>
       </div>
       
       {/* Project Modal */}

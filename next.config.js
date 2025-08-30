@@ -14,7 +14,7 @@ const nextConfig = {
   experimental: {
     esmExternals: 'loose'
   },
-  webpack: (config, { isServer }) => {
+  webpack: (config, { isServer, dev }) => {
     // Handle canvas module for server-side
     if (isServer) {
       config.externals.push('canvas')
@@ -26,6 +26,20 @@ const nextConfig = {
       include: /node_modules/,
       type: 'javascript/auto'
     })
+    
+    // Fix for React Three Fiber in development
+    if (dev) {
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        'react': require.resolve('react'),
+        'react-dom': require.resolve('react-dom'),
+        'scheduler': require.resolve('scheduler')
+      }
+    }
+    
+    // Ensure single React instance
+    config.resolve.dedupe = config.resolve.dedupe || []
+    config.resolve.dedupe.push('react', 'react-dom', 'scheduler')
     
     return config
   }
