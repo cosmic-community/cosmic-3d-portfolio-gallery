@@ -1,17 +1,13 @@
 'use client'
 
 import { Suspense, useState, useEffect } from 'react'
-import dynamic from 'next/dynamic'
 import { Project } from '@/types'
 import LoadingScene from '@/components/LoadingScene'
 import Navigation from '@/components/Navigation'
 import ProjectModal from '@/components/ProjectModal'
 
-// Dynamically import 3D components with proper error handling
-const Scene3D = dynamic(() => import('@/components/Scene3D'), {
-  ssr: false,
-  loading: () => <LoadingScene />
-})
+// Import Scene3D directly to avoid dynamic loading issues
+import Scene3D from '@/components/Scene3D'
 
 interface ClientPortfolioProps {
   projects: Project[]
@@ -25,19 +21,25 @@ export default function ClientPortfolio({ projects }: ClientPortfolioProps) {
   useEffect(() => {
     let isMounted = true
     
-    const initializeApp = async () => {
+    const initializeApp = () => {
       try {
+        // Check if we're in browser
+        if (typeof window === 'undefined') return
+        
         // Check WebGL support
         const canvas = document.createElement('canvas')
         const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl')
         
         if (!gl) {
-          setHasWebGL(false)
+          if (isMounted) {
+            setHasWebGL(false)
+            setMounted(true)
+          }
           return
         }
 
-        // Small delay to ensure React is fully initialized
-        await new Promise(resolve => setTimeout(resolve, 50))
+        // Clean up test canvas
+        canvas.remove()
         
         if (isMounted) {
           setMounted(true)
@@ -46,14 +48,17 @@ export default function ClientPortfolio({ projects }: ClientPortfolioProps) {
         console.error('Initialization error:', error)
         if (isMounted) {
           setInitError('Failed to initialize 3D environment')
+          setMounted(true)
         }
       }
     }
 
-    initializeApp()
+    // Small delay to ensure DOM is ready
+    const timer = setTimeout(initializeApp, 100)
     
     return () => {
       isMounted = false
+      clearTimeout(timer)
     }
   }, [])
 
@@ -78,11 +83,7 @@ export default function ClientPortfolio({ projects }: ClientPortfolioProps) {
     )
   }
 
-  if (!mounted) {
-    return <LoadingScene />
-  }
-
-  if (!hasWebGL) {
+  if (!hasWebGL && mounted) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center space-y-6 p-8">
@@ -98,6 +99,10 @@ export default function ClientPortfolio({ projects }: ClientPortfolioProps) {
     )
   }
 
+  if (!mounted) {
+    return <LoadingScene />
+  }
+
   return (
     <>
       {/* Navigation */}
@@ -110,7 +115,7 @@ export default function ClientPortfolio({ projects }: ClientPortfolioProps) {
         </Suspense>
       </div>
       
-      {/* Project Modal - Client component will handle state */}
+      {/* Project Modal */}
       <ProjectModal />
       
       {/* Overlay UI */}

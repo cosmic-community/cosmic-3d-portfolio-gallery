@@ -1,10 +1,10 @@
 'use client'
 
-import { useRef, useState, useEffect } from 'react'
+import { useRef, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { Text, Html } from '@react-three/drei'
-import * as THREE from 'three'
 import { Project } from '@/types'
+import * as THREE from 'three'
 
 interface ProjectCard3DProps {
   project: Project
@@ -16,168 +16,122 @@ interface ProjectCard3DProps {
 export default function ProjectCard3D({ 
   project, 
   position, 
-  onClick,
+  onClick, 
   animationDelay = 0 
 }: ProjectCard3DProps) {
   const meshRef = useRef<THREE.Mesh>(null)
-  const groupRef = useRef<THREE.Group>(null)
   const [hovered, setHovered] = useState(false)
   const [clicked, setClicked] = useState(false)
-  const [texture, setTexture] = useState<THREE.Texture | null>(null)
 
-  // Load texture manually to avoid loader issues
-  useEffect(() => {
-    if (project.metadata?.image?.imgix_url) {
-      const loader = new THREE.TextureLoader()
-      loader.load(
-        `${project.metadata.image.imgix_url}?w=400&h=240&fit=crop&auto=format`,
-        (loadedTexture) => {
-          setTexture(loadedTexture)
-        },
-        undefined,
-        (error) => {
-          console.warn('Failed to load texture:', error)
-        }
-      )
-    }
-  }, [project.metadata?.image?.imgix_url])
-
-  // Animation
   useFrame((state) => {
-    if (meshRef.current && groupRef.current) {
+    if (meshRef.current) {
+      // Gentle floating animation
       const time = state.clock.elapsedTime + animationDelay
+      meshRef.current.position.y = position[1] + Math.sin(time * 0.5) * 0.2
       
-      // Floating animation
-      groupRef.current.position.y = position[1] + Math.sin(time * 0.5) * 0.3
-      
-      // Rotation based on interaction
+      // Rotation on hover
       if (hovered) {
-        meshRef.current.rotation.y = Math.sin(time * 2) * 0.1
-        meshRef.current.scale.setScalar(1.05)
-      } else {
-        meshRef.current.rotation.y = Math.sin(time * 0.5) * 0.02
-        meshRef.current.scale.setScalar(1)
+        meshRef.current.rotation.y += 0.01
       }
       
-      // Click animation
-      if (clicked) {
-        meshRef.current.scale.setScalar(0.95)
-      }
+      // Scale animation
+      const targetScale = hovered ? 1.1 : 1
+      meshRef.current.scale.lerp(new THREE.Vector3(targetScale, targetScale, targetScale), 0.1)
     }
   })
 
-  const handleClick = (event: any) => {
-    event.stopPropagation()
+  const handleClick = () => {
     setClicked(true)
-    setTimeout(() => setClicked(false), 150)
     onClick(project)
+    setTimeout(() => setClicked(false), 200)
   }
 
-  const handlePointerOver = (event: any) => {
-    event.stopPropagation()
-    setHovered(true)
-    if (typeof document !== 'undefined') {
-      document.body.style.cursor = 'pointer'
-    }
-  }
-
-  const handlePointerOut = (event: any) => {
-    event.stopPropagation()
-    setHovered(false)
-    if (typeof document !== 'undefined') {
-      document.body.style.cursor = 'default'
-    }
-  }
+  // Get project color from metadata or use default
+  const projectColor = project.metadata?.color || '#4f46e5'
 
   return (
-    <group 
-      ref={groupRef}
-      position={[position[0], position[1], position[2]]}
-    >
+    <group position={position}>
       <mesh
         ref={meshRef}
+        onPointerEnter={() => setHovered(true)}
+        onPointerLeave={() => setHovered(false)}
         onClick={handleClick}
-        onPointerOver={handlePointerOver}
-        onPointerOut={handlePointerOut}
         castShadow
         receiveShadow
       >
-        {/* Card base */}
-        <boxGeometry args={[3, 2, 0.1]} />
+        <boxGeometry args={[2.5, 3, 0.2]} />
         <meshStandardMaterial 
-          color={project.metadata?.color || '#1f2937'}
-          metalness={0.1}
-          roughness={0.2}
+          color={hovered ? '#ffffff' : '#1f2937'}
           transparent
-          opacity={hovered ? 0.9 : 0.8}
+          opacity={0.9}
+          roughness={0.1}
+          metalness={0.1}
         />
         
-        {/* Project image or placeholder */}
-        <mesh position={[0, 0.3, 0.051]}>
-          <planeGeometry args={[2.6, 1.2]} />
-          {texture ? (
-            <meshStandardMaterial 
-              map={texture}
-              transparent 
-              opacity={0.9}
-            />
-          ) : (
-            <meshStandardMaterial 
-              color="#374151" 
-              transparent 
-              opacity={0.6}
-            />
-          )}
+        {/* Project image plane */}
+        <mesh position={[0, 0.3, 0.11]}>
+          <planeGeometry args={[2, 1.5]} />
+          <meshBasicMaterial 
+            color={projectColor}
+            transparent
+            opacity={0.8}
+          />
         </mesh>
         
         {/* Project title */}
         <Text
-          position={[0, -0.5, 0.051]}
-          fontSize={0.2}
-          maxWidth={2.5}
-          lineHeight={1}
-          letterSpacing={0.02}
-          textAlign="center"
-          color="#ffffff"
+          position={[0, -0.8, 0.11]}
+          fontSize={0.15}
+          color={hovered ? projectColor : '#ffffff'}
+          anchorX="center"
+          anchorY="middle"
+          maxWidth={2.2}
+          font="/fonts/inter-bold.woff"
         >
           {project.title}
         </Text>
         
-        {/* Technology tags */}
+        {/* Technologies */}
         {project.metadata?.technologies && project.metadata.technologies.length > 0 && (
           <Text
-            position={[0, -0.8, 0.051]}
-            fontSize={0.12}
-            maxWidth={2.5}
-            lineHeight={1}
-            letterSpacing={0.01}
-            textAlign="center"
+            position={[0, -1.1, 0.11]}
+            fontSize={0.08}
             color="#9ca3af"
+            anchorX="center"
+            anchorY="middle"
+            maxWidth={2.2}
           >
             {project.metadata.technologies.slice(0, 3).join(' • ')}
           </Text>
         )}
+        
+        {/* Hover indicator */}
+        {hovered && (
+          <Html
+            position={[0, 1.8, 0]}
+            center
+            style={{
+              pointerEvents: 'none',
+              userSelect: 'none'
+            }}
+          >
+            <div className="bg-black bg-opacity-80 text-white text-xs px-2 py-1 rounded whitespace-nowrap">
+              Click to explore
+            </div>
+          </Html>
+        )}
       </mesh>
       
-      {/* Hover tooltip */}
+      {/* Glow effect when hovered */}
       {hovered && (
-        <Html
-          position={[0, 1.5, 0]}
-          center
-          style={{
-            pointerEvents: 'none',
-            userSelect: 'none',
-          }}
-        >
-          <div className="bg-card border border-border rounded-lg p-3 shadow-lg max-w-xs">
-            <h3 className="font-semibold text-foreground mb-1">{project.title}</h3>
-            {project.metadata?.description && (
-              <p className="text-sm text-muted-foreground line-clamp-2">
-                {project.metadata.description}
-              </p>
-            )}
-          </div>
-        </Html>
+        <mesh position={[0, 0, -0.1]}>
+          <boxGeometry args={[3, 3.5, 0.1]} />
+          <meshBasicMaterial 
+            color={projectColor}
+            transparent
+            opacity={0.2}
+          />
+        </mesh>
       )}
     </group>
   )

@@ -13,18 +13,14 @@ interface Scene3DProps {
 
 export default function Scene3D({ projects }: Scene3DProps) {
   const [selectedProject, setSelectedProject] = useState<Project | null>(null)
-  const [mounted, setMounted] = useState(false)
+  const [isClient, setIsClient] = useState(false)
 
   useEffect(() => {
-    // Ensure we're fully mounted before initializing 3D components
-    const timer = setTimeout(() => {
-      setMounted(true)
-    }, 100)
-    
-    return () => clearTimeout(timer)
+    setIsClient(true)
   }, [])
 
-  if (!mounted) {
+  // Don't render anything server-side
+  if (!isClient) {
     return (
       <div className="w-full h-full flex items-center justify-center">
         <div className="text-center space-y-4">
@@ -56,31 +52,28 @@ export default function Scene3D({ projects }: Scene3DProps) {
           antialias: true,
           alpha: true,
           powerPreference: "high-performance",
-          preserveDrawingBuffer: false
+          preserveDrawingBuffer: false,
+          failIfMajorPerformanceCaveat: false
         }}
-        dpr={typeof window !== 'undefined' ? [1, Math.min(window.devicePixelRatio, 2)] : [1, 2]}
-        shadows
-        frameloop="always"
+        dpr={[1, 2]}
+        shadows={false}
+        frameloop="demand"
         onCreated={(state) => {
-          // Ensure WebGL context is properly initialized
-          if (typeof window !== 'undefined') {
+          // Safe WebGL setup
+          try {
             state.gl.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+            state.gl.outputColorSpace = 'srgb'
+          } catch (error) {
+            console.warn('WebGL setup warning:', error)
           }
-          // Disable color management to prevent React fiber issues
-          state.gl.outputColorSpace = 'srgb'
         }}
       >
         <Suspense fallback={null}>
-          {/* Scene environment */}
           <SceneEnvironment />
-          
-          {/* Projects grid */}
           <ProjectsGrid 
             projects={projects} 
             onProjectClick={handleProjectClick}
           />
-          
-          {/* Camera controls */}
           <CameraController />
         </Suspense>
       </Canvas>
