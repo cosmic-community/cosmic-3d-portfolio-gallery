@@ -1,9 +1,8 @@
 'use client'
 
-import { useRef, useState } from 'react'
-import { useFrame, useLoader } from '@react-three/fiber'
+import { useRef, useState, useEffect } from 'react'
+import { useFrame } from '@react-three/fiber'
 import { Text, Html } from '@react-three/drei'
-import { TextureLoader } from 'three'
 import * as THREE from 'three'
 import { Project } from '@/types'
 
@@ -24,6 +23,24 @@ export default function ProjectCard3D({
   const groupRef = useRef<THREE.Group>(null)
   const [hovered, setHovered] = useState(false)
   const [clicked, setClicked] = useState(false)
+  const [texture, setTexture] = useState<THREE.Texture | null>(null)
+
+  // Load texture manually to avoid loader issues
+  useEffect(() => {
+    if (project.metadata?.image?.imgix_url) {
+      const loader = new THREE.TextureLoader()
+      loader.load(
+        `${project.metadata.image.imgix_url}?w=400&h=240&fit=crop&auto=format`,
+        (loadedTexture) => {
+          setTexture(loadedTexture)
+        },
+        undefined,
+        (error) => {
+          console.warn('Failed to load texture:', error)
+        }
+      )
+    }
+  }, [project.metadata?.image?.imgix_url])
 
   // Animation
   useFrame((state) => {
@@ -59,18 +76,18 @@ export default function ProjectCard3D({
   const handlePointerOver = (event: any) => {
     event.stopPropagation()
     setHovered(true)
-    document.body.style.cursor = 'pointer'
+    if (typeof document !== 'undefined') {
+      document.body.style.cursor = 'pointer'
+    }
   }
 
   const handlePointerOut = (event: any) => {
     event.stopPropagation()
     setHovered(false)
-    document.body.style.cursor = 'default'
+    if (typeof document !== 'undefined') {
+      document.body.style.cursor = 'default'
+    }
   }
-
-  // Get project image or use placeholder
-  const imageUrl = project.metadata?.image?.imgix_url
-  const hasImage = Boolean(imageUrl)
 
   return (
     <group 
@@ -98,13 +115,12 @@ export default function ProjectCard3D({
         {/* Project image or placeholder */}
         <mesh position={[0, 0.3, 0.051]}>
           <planeGeometry args={[2.6, 1.2]} />
-          {hasImage ? (
-            <meshStandardMaterial transparent opacity={0.9}>
-              <primitive 
-                attach="map" 
-                object={useLoader(TextureLoader, `${imageUrl}?w=400&h=240&fit=crop&auto=format`)} 
-              />
-            </meshStandardMaterial>
+          {texture ? (
+            <meshStandardMaterial 
+              map={texture}
+              transparent 
+              opacity={0.9}
+            />
           ) : (
             <meshStandardMaterial 
               color="#374151" 
@@ -122,7 +138,6 @@ export default function ProjectCard3D({
           lineHeight={1}
           letterSpacing={0.02}
           textAlign="center"
-          font="https://fonts.gstatic.com/s/inter/v12/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZ9hiJ-Ek-_EeA.woff"
           color="#ffffff"
         >
           {project.title}
@@ -137,7 +152,6 @@ export default function ProjectCard3D({
             lineHeight={1}
             letterSpacing={0.01}
             textAlign="center"
-            font="https://fonts.gstatic.com/s/inter/v12/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZ9hiJ-Ek-_EeA.woff"
             color="#9ca3af"
           >
             {project.metadata.technologies.slice(0, 3).join(' • ')}

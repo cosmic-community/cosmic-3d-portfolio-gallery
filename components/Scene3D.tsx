@@ -1,7 +1,7 @@
 'use client'
 
 import { Canvas } from '@react-three/fiber'
-import { Suspense, useState } from 'react'
+import { Suspense, useState, useEffect } from 'react'
 import { Project } from '@/types'
 import SceneEnvironment from './SceneEnvironment'
 import ProjectsGrid from './ProjectsGrid'
@@ -13,6 +13,22 @@ interface Scene3DProps {
 
 export default function Scene3D({ projects }: Scene3DProps) {
   const [selectedProject, setSelectedProject] = useState<Project | null>(null)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  if (!mounted) {
+    return (
+      <div className="w-full h-full flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <p className="text-muted-foreground">Initializing 3D scene...</p>
+        </div>
+      </div>
+    )
+  }
 
   const handleProjectClick = (project: Project) => {
     setSelectedProject(project)
@@ -38,6 +54,10 @@ export default function Scene3D({ projects }: Scene3DProps) {
         }}
         dpr={[1, 2]}
         shadows
+        onCreated={(state) => {
+          // Ensure WebGL context is properly initialized
+          state.gl.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+        }}
       >
         <Suspense fallback={null}>
           {/* Scene environment */}

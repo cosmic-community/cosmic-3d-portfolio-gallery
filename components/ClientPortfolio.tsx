@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense } from 'react'
+import { Suspense, useState, useEffect } from 'react'
 import dynamic from 'next/dynamic'
 import { Project } from '@/types'
 import LoadingScene from '@/components/LoadingScene'
@@ -18,6 +18,38 @@ interface ClientPortfolioProps {
 }
 
 export default function ClientPortfolio({ projects }: ClientPortfolioProps) {
+  const [mounted, setMounted] = useState(false)
+  const [hasWebGL, setHasWebGL] = useState(true)
+
+  useEffect(() => {
+    setMounted(true)
+    
+    // Check WebGL support
+    const canvas = document.createElement('canvas')
+    const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl')
+    setHasWebGL(!!gl)
+  }, [])
+
+  if (!mounted) {
+    return <LoadingScene />
+  }
+
+  if (!hasWebGL) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center space-y-6 p-8">
+          <h2 className="text-3xl font-bold text-foreground">
+            WebGL Not Supported
+          </h2>
+          <p className="text-muted-foreground max-w-md">
+            Your browser doesn't support WebGL, which is required for the 3D portfolio. 
+            Please use a modern browser or enable WebGL in your browser settings.
+          </p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <>
       {/* Navigation */}
