@@ -1,4 +1,6 @@
-import { Suspense } from 'react'
+'use client'
+
+import { Suspense, useEffect, useState } from 'react'
 import dynamic from 'next/dynamic'
 import { getProjects } from '@/lib/cosmic'
 import { Project } from '@/types'
@@ -12,13 +14,27 @@ const Scene3D = dynamic(() => import('@/components/Scene3D'), {
   loading: () => <LoadingScene />
 })
 
-export default async function HomePage() {
-  let projects: Project[] = []
+export default function HomePage() {
+  const [projects, setProjects] = useState<Project[]>([])
+  const [isLoading, setIsLoading] = useState(true)
   
-  try {
-    projects = await getProjects()
-  } catch (error) {
-    console.error('Error loading projects:', error)
+  useEffect(() => {
+    const loadProjects = async () => {
+      try {
+        const loadedProjects = await getProjects()
+        setProjects(loadedProjects)
+      } catch (error) {
+        console.error('Error loading projects:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    
+    loadProjects()
+  }, [])
+
+  if (isLoading) {
+    return <LoadingScene />
   }
 
   return (
