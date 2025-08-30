@@ -17,10 +17,40 @@ export async function getProjects(): Promise<Project[]> {
   try {
     const response = await cosmic.objects
       .find({ type: 'projects' })
-      .props(['id', 'title', 'slug', 'metadata'])
+      .props(['id', 'title', 'slug', 'metadata', 'created_at'])
       .depth(1);
     
-    return (response.objects as Project[]).sort((a, b) => {
+    const projects = response.objects as Project[];
+    
+    // Transform position data from individual fields to position object
+    const transformedProjects = projects.map(project => ({
+      ...project,
+      metadata: {
+        ...project.metadata,
+        // Create position object from individual fields if they exist
+        position: project.metadata?.position_x !== undefined || 
+                 project.metadata?.position_y !== undefined || 
+                 project.metadata?.position_z !== undefined ? {
+          x: project.metadata.position_x ?? 0,
+          y: project.metadata.position_y ?? 0,
+          z: project.metadata.position_z ?? 0,
+        } : undefined,
+        // Create rotation object from individual fields if they exist
+        rotation: project.metadata?.rotation_x !== undefined || 
+                 project.metadata?.rotation_y !== undefined || 
+                 project.metadata?.rotation_z !== undefined ? {
+          x: project.metadata.rotation_x ?? 0,
+          y: project.metadata.rotation_y ?? 0,
+          z: project.metadata.rotation_z ?? 0,
+        } : undefined,
+        // Parse technologies JSON string if it exists
+        technologies: typeof project.metadata?.technologies === 'string' ? 
+                     JSON.parse(project.metadata.technologies) : 
+                     project.metadata?.technologies || [],
+      }
+    }));
+    
+    return transformedProjects.sort((a, b) => {
       const dateA = new Date(a.created_at).getTime();
       const dateB = new Date(b.created_at).getTime();
       return dateB - dateA; // Newest first
@@ -42,10 +72,35 @@ export async function getFeaturedProjects(): Promise<Project[]> {
         type: 'projects',
         'metadata.featured': true 
       })
-      .props(['id', 'title', 'slug', 'metadata'])
+      .props(['id', 'title', 'slug', 'metadata', 'created_at'])
       .depth(1);
     
-    return response.objects as Project[];
+    const projects = response.objects as Project[];
+    
+    // Transform the data structure like in getProjects
+    return projects.map(project => ({
+      ...project,
+      metadata: {
+        ...project.metadata,
+        position: project.metadata?.position_x !== undefined || 
+                 project.metadata?.position_y !== undefined || 
+                 project.metadata?.position_z !== undefined ? {
+          x: project.metadata.position_x ?? 0,
+          y: project.metadata.position_y ?? 0,
+          z: project.metadata.position_z ?? 0,
+        } : undefined,
+        rotation: project.metadata?.rotation_x !== undefined || 
+                 project.metadata?.rotation_y !== undefined || 
+                 project.metadata?.rotation_z !== undefined ? {
+          x: project.metadata.rotation_x ?? 0,
+          y: project.metadata.rotation_y ?? 0,
+          z: project.metadata.rotation_z ?? 0,
+        } : undefined,
+        technologies: typeof project.metadata?.technologies === 'string' ? 
+                     JSON.parse(project.metadata.technologies) : 
+                     project.metadata?.technologies || [],
+      }
+    }));
   } catch (error) {
     if (hasStatus(error) && error.status === 404) {
       return [];
@@ -71,7 +126,30 @@ export async function getProject(slug: string): Promise<Project | null> {
       return null;
     }
     
-    return project;
+    // Transform the data structure
+    return {
+      ...project,
+      metadata: {
+        ...project.metadata,
+        position: project.metadata?.position_x !== undefined || 
+                 project.metadata?.position_y !== undefined || 
+                 project.metadata?.position_z !== undefined ? {
+          x: project.metadata.position_x ?? 0,
+          y: project.metadata.position_y ?? 0,
+          z: project.metadata.position_z ?? 0,
+        } : undefined,
+        rotation: project.metadata?.rotation_x !== undefined || 
+                 project.metadata?.rotation_y !== undefined || 
+                 project.metadata?.rotation_z !== undefined ? {
+          x: project.metadata.rotation_x ?? 0,
+          y: project.metadata.rotation_y ?? 0,
+          z: project.metadata.rotation_z ?? 0,
+        } : undefined,
+        technologies: typeof project.metadata?.technologies === 'string' ? 
+                     JSON.parse(project.metadata.technologies) : 
+                     project.metadata?.technologies || [],
+      }
+    };
   } catch (error) {
     if (hasStatus(error) && error.status === 404) {
       return null;
@@ -148,27 +226,44 @@ export async function createProject(data: {
       title: data.title,
       metadata: {
         description: data.description,
-        technologies: data.technologies,
+        technologies: JSON.stringify(data.technologies), // Store as JSON string
         live_url: data.live_url || '',
         github_url: data.github_url || '',
         image: data.image,
-        status: 'published',
+        status: 'Published',
         featured: false,
-        position: {
-          x: Math.random() * 10 - 5,
-          y: Math.random() * 5,
-          z: Math.random() * 10 - 5,
-        },
-        rotation: {
-          x: 0,
-          y: 0,
-          z: 0,
-        },
+        position_x: Math.random() * 10 - 5,
+        position_y: Math.random() * 5,
+        position_z: Math.random() * 10 - 5,
+        rotation_x: 0,
+        rotation_y: 0,
+        rotation_z: 0,
         scale: 1,
       },
     });
     
-    return response.object as Project;
+    const project = response.object as Project;
+    
+    // Transform the response to match our interface
+    return {
+      ...project,
+      metadata: {
+        ...project.metadata,
+        position: {
+          x: project.metadata.position_x ?? 0,
+          y: project.metadata.position_y ?? 0,
+          z: project.metadata.position_z ?? 0,
+        },
+        rotation: {
+          x: project.metadata.rotation_x ?? 0,
+          y: project.metadata.rotation_y ?? 0,
+          z: project.metadata.rotation_z ?? 0,
+        },
+        technologies: typeof project.metadata?.technologies === 'string' ? 
+                     JSON.parse(project.metadata.technologies) : 
+                     project.metadata?.technologies || [],
+      }
+    };
   } catch (error) {
     console.error('Error creating project:', error);
     throw new Error('Failed to create project');
@@ -178,11 +273,53 @@ export async function createProject(data: {
 // Update project
 export async function updateProject(id: string, data: Partial<Project['metadata']>): Promise<Project> {
   try {
+    // Transform position/rotation objects back to individual fields for Cosmic
+    const cosmicMetadata: Record<string, any> = { ...data };
+    
+    if (data.position) {
+      cosmicMetadata.position_x = data.position.x;
+      cosmicMetadata.position_y = data.position.y;
+      cosmicMetadata.position_z = data.position.z;
+      delete cosmicMetadata.position;
+    }
+    
+    if (data.rotation) {
+      cosmicMetadata.rotation_x = data.rotation.x;
+      cosmicMetadata.rotation_y = data.rotation.y;
+      cosmicMetadata.rotation_z = data.rotation.z;
+      delete cosmicMetadata.rotation;
+    }
+    
+    if (data.technologies && Array.isArray(data.technologies)) {
+      cosmicMetadata.technologies = JSON.stringify(data.technologies);
+    }
+    
     const response = await cosmic.objects.updateOne(id, {
-      metadata: data,
+      metadata: cosmicMetadata,
     });
     
-    return response.object as Project;
+    const project = response.object as Project;
+    
+    // Transform the response back
+    return {
+      ...project,
+      metadata: {
+        ...project.metadata,
+        position: project.metadata?.position_x !== undefined ? {
+          x: project.metadata.position_x,
+          y: project.metadata.position_y ?? 0,
+          z: project.metadata.position_z ?? 0,
+        } : undefined,
+        rotation: project.metadata?.rotation_x !== undefined ? {
+          x: project.metadata.rotation_x,
+          y: project.metadata.rotation_y ?? 0,
+          z: project.metadata.rotation_z ?? 0,
+        } : undefined,
+        technologies: typeof project.metadata?.technologies === 'string' ? 
+                     JSON.parse(project.metadata.technologies) : 
+                     project.metadata?.technologies || [],
+      }
+    };
   } catch (error) {
     console.error('Error updating project:', error);
     throw new Error('Failed to update project');

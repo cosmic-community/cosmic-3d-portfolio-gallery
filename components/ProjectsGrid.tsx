@@ -12,6 +12,10 @@ interface ProjectsGridProps {
 export default function ProjectsGrid({ projects, onProjectClick }: ProjectsGridProps) {
   // Generate positions for projects in a circular/spiral arrangement
   const projectPositions = useMemo(() => {
+    if (!projects || projects.length === 0) {
+      return [];
+    }
+
     return projects.map((project, index) => {
       // Use position from CMS if available, otherwise generate
       if (project.metadata?.position) {
@@ -43,13 +47,13 @@ export default function ProjectsGrid({ projects, onProjectClick }: ProjectsGridP
 
   if (!projects || projects.length === 0) {
     return (
-      <mesh position={[0, 0, 0]}>
-        <boxGeometry args={[4, 2, 0.1]} />
-        <meshStandardMaterial color="#374151" transparent opacity={0.8} />
-        <mesh position={[0, 0, 0.06]}>
-          {/* Empty state indicator */}
+      <group>
+        <mesh position={[0, 0, 0]}>
+          <boxGeometry args={[4, 2, 0.1]} />
+          <meshStandardMaterial color="#374151" transparent opacity={0.8} />
         </mesh>
-      </mesh>
+        {/* Text component would go here for "No projects found" */}
+      </group>
     )
   }
 

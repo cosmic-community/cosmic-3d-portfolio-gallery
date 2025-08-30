@@ -10,7 +10,7 @@ interface CosmicObject {
   modified_at: string;
 }
 
-// Project interface with proper metadata structure
+// Project interface with proper metadata structure matching Cosmic CMS
 interface Project extends CosmicObject {
   type: 'projects';
   metadata: {
@@ -37,6 +37,14 @@ interface Project extends CosmicObject {
     category?: string;
     status?: ProjectStatus;
     color?: string;
+    // Individual position fields from CMS
+    position_x?: number;
+    position_y?: number;
+    position_z?: number;
+    // Individual rotation fields from CMS
+    rotation_x?: number;
+    rotation_y?: number;
+    rotation_z?: number;
   };
 }
 
@@ -49,7 +57,7 @@ interface About extends CosmicObject {
       url: string;
       imgix_url: string;
     };
-    skills?: string[];
+    skills?: string;
     experience?: string;
     location?: string;
     email?: string;
@@ -59,25 +67,37 @@ interface About extends CosmicObject {
   };
 }
 
-// Skills interface
+// Skills interface matching existing CMS structure
 interface Skill extends CosmicObject {
   type: 'skills';
   metadata: {
     proficiency?: number;
-    category?: SkillCategory;
+    category?: {
+      key: string;
+      value: string;
+    };
     icon?: string;
     color?: string;
     years_experience?: number;
   };
 }
 
-// Contact interface
+// Contact interface matching existing CMS structure
 interface Contact extends CosmicObject {
   type: 'contact';
   metadata: {
     email?: string;
     phone?: string;
     location?: string;
+    linkedin_url?: string;
+    github_url?: string;
+    twitter_url?: string;
+    dribbble_url?: string;
+    behance_url?: string;
+    availability?: {
+      key: string;
+      value: string;
+    };
     social_links?: {
       linkedin?: string;
       github?: string;
@@ -85,14 +105,13 @@ interface Contact extends CosmicObject {
       dribbble?: string;
       behance?: string;
     };
-    availability?: ContactStatus;
   };
 }
 
 // Type literals for select-dropdown values
-type ProjectStatus = 'published' | 'draft' | 'archived';
-type SkillCategory = 'frontend' | 'backend' | 'design' | 'tools' | '3d';
-type ContactStatus = 'available' | 'busy' | 'not-available';
+type ProjectStatus = 'Published' | 'Draft' | 'Archived';
+type SkillCategory = 'Frontend' | 'Backend' | '3D' | 'Design' | 'Tools';
+type ContactStatus = 'Available' | 'Busy' | 'Not Available';
 
 // API response types
 interface CosmicResponse<T> {

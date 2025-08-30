@@ -92,7 +92,7 @@ export default function ProjectCard3D({
         </Text>
         
         {/* Technologies */}
-        {project.metadata?.technologies && project.metadata.technologies.length > 0 && (
+        {project.metadata?.technologies && Array.isArray(project.metadata.technologies) && project.metadata.technologies.length > 0 && (
           <Text
             position={[0, -1.1, 0.11]}
             fontSize={0.08}
