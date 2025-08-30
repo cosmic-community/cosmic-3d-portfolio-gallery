@@ -5,9 +5,13 @@ import { Project } from '@/types'
 import LoadingScene from '@/components/LoadingScene'
 import Navigation from '@/components/Navigation'
 import ProjectModal from '@/components/ProjectModal'
+import dynamic from 'next/dynamic'
 
-// Import Scene3D directly to avoid dynamic loading issues
-import Scene3D from '@/components/Scene3D'
+// Dynamically import Scene3D to avoid SSR issues
+const Scene3D = dynamic(() => import('@/components/Scene3D'), { 
+  ssr: false,
+  loading: () => <LoadingScene />
+})
 
 interface ClientPortfolioProps {
   projects: Project[]
@@ -110,9 +114,7 @@ export default function ClientPortfolio({ projects }: ClientPortfolioProps) {
       
       {/* 3D Scene */}
       <div className="absolute inset-0 w-full h-full">
-        <Suspense fallback={<LoadingScene />}>
-          <Scene3D projects={projects} />
-        </Suspense>
+        <Scene3D projects={projects} />
       </div>
       
       {/* Project Modal */}

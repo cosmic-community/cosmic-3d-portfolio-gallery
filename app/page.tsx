@@ -2,6 +2,7 @@ import { Suspense } from 'react'
 import { getProjects } from '@/lib/cosmic'
 import { Project } from '@/types'
 import ClientPortfolio from '@/components/ClientPortfolio'
+import LoadingScene from '@/components/LoadingScene'
 
 export default async function HomePage() {
   let projects: Project[] = []
@@ -14,7 +15,7 @@ export default async function HomePage() {
 
   return (
     <div className="relative w-full h-screen overflow-hidden">
-      <Suspense fallback={<div>Loading...</div>}>
+      <Suspense fallback={<LoadingScene />}>
         <ClientPortfolio projects={projects} />
       </Suspense>
     </div>

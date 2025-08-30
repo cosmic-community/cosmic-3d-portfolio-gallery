@@ -1,7 +1,7 @@
 'use client'
 
 import { Canvas } from '@react-three/fiber'
-import { Suspense, useState, useEffect } from 'react'
+import { Suspense, useState } from 'react'
 import { Project } from '@/types'
 import SceneEnvironment from './SceneEnvironment'
 import ProjectsGrid from './ProjectsGrid'
@@ -13,23 +13,6 @@ interface Scene3DProps {
 
 export default function Scene3D({ projects }: Scene3DProps) {
   const [selectedProject, setSelectedProject] = useState<Project | null>(null)
-  const [isClient, setIsClient] = useState(false)
-
-  useEffect(() => {
-    setIsClient(true)
-  }, [])
-
-  // Don't render anything server-side
-  if (!isClient) {
-    return (
-      <div className="w-full h-full flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-          <p className="text-muted-foreground">Initializing 3D scene...</p>
-        </div>
-      </div>
-    )
-  }
 
   const handleProjectClick = (project: Project) => {
     setSelectedProject(project)
