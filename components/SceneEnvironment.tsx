@@ -34,7 +34,7 @@ export default function SceneEnvironment() {
       <pointLight position={[-10, -10, -10]} intensity={0.3} color="#4f46e5" />
       <pointLight position={[10, -10, 10]} intensity={0.3} color="#7c3aed" />
       
-      {/* Stars background */}
+      {/* Stars background - simplified to avoid drei dependency issues */}
       <Stars
         ref={starsRef}
         radius={200}
@@ -46,45 +46,39 @@ export default function SceneEnvironment() {
         speed={0.5}
       />
       
-      {/* Floating geometric shapes */}
-      <Float speed={2} rotationIntensity={0.5} floatIntensity={0.5}>
-        <mesh position={[-15, 8, -10]} castShadow>
-          <octahedronGeometry args={[1]} />
-          <meshStandardMaterial 
-            color="#4f46e5" 
-            transparent 
-            opacity={0.3}
-            roughness={0.1}
-            metalness={0.8}
-          />
-        </mesh>
-      </Float>
+      {/* Floating geometric shapes - removed Float component to reduce drei dependencies */}
+      <mesh position={[-15, 8, -10]} castShadow>
+        <octahedronGeometry args={[1]} />
+        <meshStandardMaterial 
+          color="#4f46e5" 
+          transparent 
+          opacity={0.3}
+          roughness={0.1}
+          metalness={0.8}
+        />
+      </mesh>
       
-      <Float speed={1.5} rotationIntensity={0.3} floatIntensity={0.8}>
-        <mesh position={[15, -5, -15]} castShadow>
-          <tetrahedronGeometry args={[1.5]} />
-          <meshStandardMaterial 
-            color="#7c3aed" 
-            transparent 
-            opacity={0.2}
-            roughness={0.1}
-            metalness={0.9}
-          />
-        </mesh>
-      </Float>
+      <mesh position={[15, -5, -15]} castShadow>
+        <tetrahedronGeometry args={[1.5]} />
+        <meshStandardMaterial 
+          color="#7c3aed" 
+          transparent 
+          opacity={0.2}
+          roughness={0.1}
+          metalness={0.9}
+        />
+      </mesh>
       
-      <Float speed={2.5} rotationIntensity={0.8} floatIntensity={0.3}>
-        <mesh position={[0, 12, -20]} castShadow>
-          <icosahedronGeometry args={[0.8]} />
-          <meshStandardMaterial 
-            color="#06b6d4" 
-            transparent 
-            opacity={0.25}
-            roughness={0.1}
-            metalness={0.7}
-          />
-        </mesh>
-      </Float>
+      <mesh position={[0, 12, -20]} castShadow>
+        <icosahedronGeometry args={[0.8]} />
+        <meshStandardMaterial 
+          color="#06b6d4" 
+          transparent 
+          opacity={0.25}
+          roughness={0.1}
+          metalness={0.7}
+        />
+      </mesh>
       
       {/* Fog for depth */}
       <fog attach="fog" args={['#0f0f23', 20, 100]} />
