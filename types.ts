@@ -134,7 +134,7 @@ interface InteractionState {
 }
 
 // Utility types
-type OptionalMetadata<T> = Partial<T['metadata']>;
+type OptionalMetadata<T extends CosmicObject> = Partial<T['metadata']>;
 type CreateProjectData = Omit<Project, 'id' | 'created_at' | 'modified_at'>;
 
 // Type guards for runtime validation

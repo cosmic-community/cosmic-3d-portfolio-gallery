@@ -1,6 +1,7 @@
 import { Suspense } from 'react'
 import dynamic from 'next/dynamic'
 import { getProjects } from '@/lib/cosmic'
+import { Project } from '@/types'
 import LoadingScene from '@/components/LoadingScene'
 import Navigation from '@/components/Navigation'
 import ProjectModal from '@/components/ProjectModal'
@@ -12,7 +13,7 @@ const Scene3D = dynamic(() => import('@/components/Scene3D'), {
 })
 
 export default async function HomePage() {
-  let projects = []
+  let projects: Project[] = []
   
   try {
     projects = await getProjects()
