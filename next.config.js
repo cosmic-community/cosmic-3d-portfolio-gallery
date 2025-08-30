@@ -2,6 +2,9 @@
 const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
+  experimental: {
+    esmExternals: false
+  },
   images: {
     domains: ['cdn.cosmicjs.com', 'imgix.cosmicjs.com'],
     dangerouslyAllowSVG: true,
@@ -12,8 +15,7 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: false,
   },
-  transpilePackages: ['three'],
-  webpack: (config, { isServer }) => {
+  webpack: (config, { isServer, dev }) => {
     // Handle canvas module for server-side
     if (isServer) {
       config.externals.push('canvas')
@@ -25,6 +27,12 @@ const nextConfig = {
       include: /node_modules/,
       type: 'javascript/auto'
     })
+
+    // Fix for three.js imports
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      'three/examples/jsm': 'three/examples/jsm'
+    }
     
     return config
   }

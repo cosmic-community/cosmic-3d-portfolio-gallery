@@ -7,7 +7,7 @@ import Navigation from '@/components/Navigation'
 import ProjectModal from '@/components/ProjectModal'
 import dynamic from 'next/dynamic'
 
-// Dynamically import Scene3D to avoid SSR issues with better loading
+// Dynamically import Scene3D to avoid SSR issues
 const Scene3D = dynamic(() => import('@/components/Scene3D'), { 
   ssr: false,
   loading: () => <LoadingScene />
@@ -24,6 +24,7 @@ export default function ClientPortfolio({ projects }: ClientPortfolioProps) {
 
   const checkWebGL = useCallback(() => {
     try {
+      if (typeof window === 'undefined') return false
       const canvas = document.createElement('canvas')
       const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl')
       canvas.remove()
@@ -36,10 +37,13 @@ export default function ClientPortfolio({ projects }: ClientPortfolioProps) {
   useEffect(() => {
     let isMounted = true
     
-    const initializeApp = () => {
+    const initializeApp = async () => {
       try {
         // Check if we're in browser
         if (typeof window === 'undefined') return
+        
+        // Small delay to ensure DOM is ready
+        await new Promise(resolve => setTimeout(resolve, 100))
         
         // Check WebGL support
         const webglSupported = checkWebGL()
@@ -64,12 +68,10 @@ export default function ClientPortfolio({ projects }: ClientPortfolioProps) {
       }
     }
 
-    // Small delay to ensure DOM is ready and React has fully initialized
-    const timer = setTimeout(initializeApp, 150)
+    initializeApp()
     
     return () => {
       isMounted = false
-      clearTimeout(timer)
     }
   }, [checkWebGL])
 

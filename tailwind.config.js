@@ -5,46 +5,40 @@ module.exports = {
     './components/**/*.{js,ts,jsx,tsx,mdx}',
     './app/**/*.{js,ts,jsx,tsx,mdx}',
   ],
+  darkMode: 'class',
   theme: {
     extend: {
       colors: {
-        background: 'hsl(222.2 84% 4.9%)',
-        foreground: 'hsl(210 40% 98%)',
+        background: 'hsl(var(--background))',
+        foreground: 'hsl(var(--foreground))',
         primary: {
-          DEFAULT: 'hsl(217.2 91.2% 59.8%)',
-          foreground: 'hsl(222.2 84% 4.9%)',
+          DEFAULT: 'hsl(var(--primary))',
+          foreground: 'hsl(var(--primary-foreground))',
         },
         secondary: {
-          DEFAULT: 'hsl(217.2 32.6% 17.5%)',
-          foreground: 'hsl(210 40% 98%)',
+          DEFAULT: 'hsl(var(--secondary))',
+          foreground: 'hsl(var(--secondary-foreground))',
         },
         accent: {
-          DEFAULT: 'hsl(267.1 57.5% 65.9%)',
-          foreground: 'hsl(210 40% 98%)',
+          DEFAULT: 'hsl(var(--accent))',
+          foreground: 'hsl(var(--accent-foreground))',
         },
         muted: {
-          DEFAULT: 'hsl(217.2 32.6% 17.5%)',
-          foreground: 'hsl(215 20.2% 65.1%)',
+          DEFAULT: 'hsl(var(--muted))',
+          foreground: 'hsl(var(--muted-foreground))',
         },
         card: {
-          DEFAULT: 'hsl(222.2 84% 4.9%)',
-          foreground: 'hsl(210 40% 98%)',
+          DEFAULT: 'hsl(var(--card))',
+          foreground: 'hsl(var(--card-foreground))',
         },
-        border: 'hsl(217.2 32.6% 17.5%)',
+        border: 'hsl(var(--border))',
       },
       fontFamily: {
-        sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        sans: ['Inter', 'sans-serif'],
       },
       animation: {
-        'float': 'float 6s ease-in-out infinite',
-        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+        'pulse': 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
       },
-      keyframes: {
-        float: {
-          '0%, 100%': { transform: 'translateY(0px)' },
-          '50%': { transform: 'translateY(-10px)' },
-        }
-      }
     },
   },
   plugins: [],
