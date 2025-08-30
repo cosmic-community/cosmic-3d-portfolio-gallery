@@ -11,9 +11,6 @@ const nextConfig = {
     ignoreDuringBuilds: false,
   },
   transpilePackages: ['three'],
-  experimental: {
-    esmExternals: 'loose'
-  },
   webpack: (config, { isServer, dev }) => {
     // Handle canvas module for server-side
     if (isServer) {
@@ -27,7 +24,7 @@ const nextConfig = {
       type: 'javascript/auto'
     })
     
-    // Fix for React Three Fiber in development
+    // Fix for React Three Fiber - use resolve.alias instead of dedupe
     if (dev) {
       config.resolve.alias = {
         ...config.resolve.alias,
@@ -37,9 +34,13 @@ const nextConfig = {
       }
     }
     
-    // Ensure single React instance
-    config.resolve.dedupe = config.resolve.dedupe || []
-    config.resolve.dedupe.push('react', 'react-dom', 'scheduler')
+    // Use resolve.alias for single React instance instead of deprecated dedupe
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      'react': require.resolve('react'),
+      'react-dom': require.resolve('react-dom'),
+      'scheduler': require.resolve('scheduler')
+    }
     
     return config
   }
