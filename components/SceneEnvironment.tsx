@@ -1,24 +1,17 @@
 'use client'
 
-import { useRef, useMemo } from 'react'
-import { useFrame } from '@react-three/fiber'
+import { useRef } from 'react'
 import { Environment, Stars } from '@react-three/drei'
+import { useFrame } from '@react-three/fiber'
+import { Group } from 'three'
 
 export default function SceneEnvironment() {
-  const envRef = useRef<any>(null)
+  const starsRef = useRef<Group>(null)
 
-  // Optimized environment settings
-  const environmentConfig = useMemo(() => ({
-    preset: 'city' as const,
-    background: false,
-    blur: 0.2,
-    intensity: 0.6
-  }), [])
-
-  useFrame((state) => {
-    // Subtle environment animation
-    if (envRef.current) {
-      envRef.current.rotation.y += 0.001
+  useFrame((state, delta) => {
+    if (starsRef.current) {
+      starsRef.current.rotation.x += delta * 0.02
+      starsRef.current.rotation.y += delta * 0.01
     }
   })
 
@@ -30,53 +23,53 @@ export default function SceneEnvironment() {
       {/* Main directional light */}
       <directionalLight
         position={[10, 10, 5]}
-        intensity={1}
+        intensity={1.5}
         color="#ffffff"
-        castShadow={false}
+        castShadow
+        shadow-mapSize-width={2048}
+        shadow-mapSize-height={2048}
+        shadow-camera-far={50}
+        shadow-camera-left={-20}
+        shadow-camera-right={20}
+        shadow-camera-top={20}
+        shadow-camera-bottom={-20}
       />
       
       {/* Fill light */}
       <directionalLight
-        position={[-5, 5, -5]}
-        intensity={0.4}
-        color="#818cf8"
-      />
-      
-      {/* Point light for accents */}
-      <pointLight
-        position={[0, 10, 0]}
+        position={[-10, -10, -5]}
         intensity={0.5}
-        color="#6366f1"
-        distance={50}
-        decay={2}
+        color="#4299e1"
       />
 
-      {/* Environment for reflections */}
+      {/* Point lights for cosmic effect */}
+      <pointLight position={[0, 0, 0]} intensity={0.8} color="#667eea" />
+      <pointLight position={[20, 10, -10]} intensity={0.6} color="#764ba2" />
+      <pointLight position={[-20, -10, 10]} intensity={0.4} color="#f093fb" />
+
+      {/* Environment with cosmic city preset - removed ref prop */}
       <Environment
-        ref={envRef}
-        {...environmentConfig}
+        preset="city"
+        background={false}
+        blur={0.8}
+        intensity={0.6}
       />
-      
-      {/* Background stars */}
-      <Stars 
-        radius={100} 
-        depth={50} 
-        count={1000} 
-        factor={4} 
-        saturation={0.5}
-        fade
-        speed={0.5}
-      />
-      
-      {/* Background gradient */}
-      <mesh position={[0, 0, -50]} scale={[100, 100, 1]}>
-        <planeGeometry />
-        <meshBasicMaterial 
-          color="#0f0f23"
-          transparent
-          opacity={0.8}
+
+      {/* Animated stars */}
+      <group ref={starsRef}>
+        <Stars
+          radius={300}
+          depth={60}
+          count={1000}
+          factor={6}
+          saturation={0.8}
+          fade
+          speed={0.5}
         />
-      </mesh>
+      </group>
+
+      {/* Cosmic fog effect */}
+      <fog attach="fog" args={['#0f0f23', 30, 200]} />
     </>
   )
 }
