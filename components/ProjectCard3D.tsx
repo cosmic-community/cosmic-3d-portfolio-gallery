@@ -32,11 +32,14 @@ export default function ProjectCard3D({
     ? project.metadata.technologies 
     : []
 
-  // Safe category access with type guard
-  const getCategoryValue = () => {
+  // Safe category access with proper type checking
+  const getCategoryValue = (): string => {
     const category = project.metadata?.category
-    if (category && typeof category === 'object' && 'value' in category && typeof category.value === 'string') {
-      return category.value
+    if (category && typeof category === 'object' && category !== null && 'value' in category) {
+      const categoryValue = (category as { value: unknown }).value
+      if (typeof categoryValue === 'string') {
+        return categoryValue
+      }
     }
     return 'General'
   }
