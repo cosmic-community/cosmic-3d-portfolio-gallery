@@ -1,87 +1,82 @@
 'use client'
 
-import { useRef } from 'react'
+import { useRef, useMemo } from 'react'
 import { useFrame } from '@react-three/fiber'
-import { Stars, Float } from '@react-three/drei'
-import * as THREE from 'three'
+import { Environment, Stars } from '@react-three/drei'
 
 export default function SceneEnvironment() {
-  const starsRef = useRef<THREE.Points>(null)
-  
+  const envRef = useRef<any>(null)
+
+  // Optimized environment settings
+  const environmentConfig = useMemo(() => ({
+    preset: 'city' as const,
+    background: false,
+    blur: 0.2,
+    intensity: 0.6
+  }), [])
+
   useFrame((state) => {
-    if (starsRef.current) {
-      starsRef.current.rotation.x = Math.sin(state.clock.elapsedTime * 0.1) * 0.05
-      starsRef.current.rotation.y = Math.sin(state.clock.elapsedTime * 0.05) * 0.05
+    // Subtle environment animation
+    if (envRef.current) {
+      envRef.current.rotation.y += 0.001
     }
   })
 
   return (
     <>
-      {/* Lighting */}
-      <ambientLight intensity={0.4} />
-      <directionalLight 
-        position={[10, 10, 5]} 
-        intensity={1}
-        castShadow
-        shadow-mapSize-width={2048}
-        shadow-mapSize-height={2048}
-        shadow-camera-far={50}
-        shadow-camera-left={-10}
-        shadow-camera-right={10}
-        shadow-camera-top={10}
-        shadow-camera-bottom={-10}
-      />
-      <pointLight position={[-10, -10, -10]} intensity={0.3} color="#4f46e5" />
-      <pointLight position={[10, -10, 10]} intensity={0.3} color="#7c3aed" />
+      {/* Ambient lighting */}
+      <ambientLight intensity={0.3} color="#4a5568" />
       
-      {/* Stars background - simplified to avoid drei dependency issues */}
-      <Stars
-        ref={starsRef}
-        radius={200}
-        depth={50}
-        count={3000}
-        factor={4}
-        saturation={0}
+      {/* Main directional light */}
+      <directionalLight
+        position={[10, 10, 5]}
+        intensity={1}
+        color="#ffffff"
+        castShadow={false}
+      />
+      
+      {/* Fill light */}
+      <directionalLight
+        position={[-5, 5, -5]}
+        intensity={0.4}
+        color="#818cf8"
+      />
+      
+      {/* Point light for accents */}
+      <pointLight
+        position={[0, 10, 0]}
+        intensity={0.5}
+        color="#6366f1"
+        distance={50}
+        decay={2}
+      />
+
+      {/* Environment for reflections */}
+      <Environment
+        ref={envRef}
+        {...environmentConfig}
+      />
+      
+      {/* Background stars */}
+      <Stars 
+        radius={100} 
+        depth={50} 
+        count={1000} 
+        factor={4} 
+        saturation={0.5}
         fade
         speed={0.5}
       />
       
-      {/* Floating geometric shapes - removed Float component to reduce drei dependencies */}
-      <mesh position={[-15, 8, -10]} castShadow>
-        <octahedronGeometry args={[1]} />
-        <meshStandardMaterial 
-          color="#4f46e5" 
-          transparent 
-          opacity={0.3}
-          roughness={0.1}
-          metalness={0.8}
+      {/* Background gradient */}
+      <mesh position={[0, 0, -50]} scale={[100, 100, 1]}>
+        <planeGeometry />
+        <meshBasicMaterial 
+          color="#0f0f23"
+          transparent
+          opacity={0.8}
         />
       </mesh>
-      
-      <mesh position={[15, -5, -15]} castShadow>
-        <tetrahedronGeometry args={[1.5]} />
-        <meshStandardMaterial 
-          color="#7c3aed" 
-          transparent 
-          opacity={0.2}
-          roughness={0.1}
-          metalness={0.9}
-        />
-      </mesh>
-      
-      <mesh position={[0, 12, -20]} castShadow>
-        <icosahedronGeometry args={[0.8]} />
-        <meshStandardMaterial 
-          color="#06b6d4" 
-          transparent 
-          opacity={0.25}
-          roughness={0.1}
-          metalness={0.7}
-        />
-      </mesh>
-      
-      {/* Fog for depth */}
-      <fog attach="fog" args={['#0f0f23', 20, 100]} />
     </>
   )
 }
